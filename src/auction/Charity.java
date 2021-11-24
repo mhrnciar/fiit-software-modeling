@@ -3,6 +3,7 @@ package auction;
 import payment.Bank;
 
 public class Charity {
+    int id;
     String name;
     String description;
     Bank bank;
@@ -11,6 +12,10 @@ public class Charity {
         this.name = name;
         this.description = description;
         this.bank = bank;
+    }
+
+    public int getId() {
+        return id;
     }
 
     public String getName() {

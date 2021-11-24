@@ -65,6 +65,10 @@ public class User {
         return username;
     }
 
+    public String getFirstName() {
+        return firstName;
+    }
+
     public void setPassword(String password) {
         this.password = password;
 
@@ -80,4 +84,7 @@ public class User {
         }
     }
 
+    public int getId() {
+        return id;
+    }
 }

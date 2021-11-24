@@ -45,6 +45,21 @@ public class Datetime {
         this.second = cal.get(Calendar.SECOND);
     }
 
+    public Datetime(Date datetime) {
+        Calendar cal = Calendar.getInstance();
+        cal.setTime(datetime);
+        this.year = cal.get(Calendar.YEAR);
+        this.month = cal.get(Calendar.MONTH);
+        this.day = cal.get(Calendar.DAY_OF_MONTH);
+        this.hour = cal.get(Calendar.HOUR);
+        this.minute = cal.get(Calendar.MINUTE);
+        this.second = cal.get(Calendar.SECOND);
+    }
+
+    public String getDateString() {
+        return "" + year + "-" + month + "-" + day + " " + hour + ":" + minute + ":" + second;
+    }
+
     public int getYear() {
         return year;
     }
