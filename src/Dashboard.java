@@ -1,10 +1,11 @@
-import auction.Auction;
+import auction.*;
 import users.*;
 
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.*;
 import java.sql.*;
+import java.text.ParseException;
 import java.util.ArrayList;
 
 public class Dashboard {
@@ -20,6 +21,22 @@ public class Dashboard {
         generateDashboard();
     }
 
+    /**
+     * Generate dashboard screen with graphical objects declared DashboardCanvas. On the top right is
+     * a button to sign in or sign up. Only Bidder or Organizer can sign up, Operator has to be created
+     * through database.
+     *
+     * After clicking on sign in button, a new dialog opens with fields for username and password. After
+     * inserting the login information, it is looked up in database and if the username and password match,
+     * the user is logged in, otherwise nothing happens.
+     * When choosing the sign up button, a new dialog opens with additional data for registration. Again,
+     * the inserted information is validated, new user is created in the database and logged in.
+     *
+     * Every class of User can do other things, so after login is invoked function createComponents(), which
+     * prepares additional buttons for every user according to their class.
+     *
+     * Under the top bar is a list of auctions ordered by name.
+     */
     public void generateDashboard() {
         canvas = new DashboardCanvas();
 
@@ -30,10 +47,12 @@ public class Dashboard {
         title.setBounds(400, 5, 480, 50);
         canvas.add(title);
 
+        // No user is logged in - show sign in and sign up buttons
         if (loggedIn == null) {
-            JLabel loginLabel = new JLabel(prepareHTML("white", "5", "Log in"), SwingConstants.CENTER);
-            loginLabel.setBounds(1150, 5, 90, 50);
+            JLabel loginLabel = new JLabel(prepareHTML("white", "5", "Sign in"), SwingConstants.CENTER);
+            loginLabel.setBounds(1000, 5, 140, 50);
 
+            // Sign in dialog
             loginLabel.addMouseListener(new MouseAdapter() {
                 @Override
                 public void mouseClicked(MouseEvent e) {
@@ -59,6 +78,7 @@ public class Dashboard {
                     JButton loginButton = new JButton("Log in");
                     loginButton.setBounds(100, 130, 100, 50);
 
+                    // Check if user exists and passwords match
                     loginButton.addActionListener (e1 -> {
                         try {
                             Statement stm = connection.createStatement();
@@ -82,7 +102,63 @@ public class Dashboard {
                 }
             });
             canvas.add(loginLabel);
+
+            JLabel registerLabel = new JLabel(prepareHTML("white", "5", "Sign up"), SwingConstants.CENTER);
+            registerLabel.setBounds(1140, 5, 140, 50);
+
+            // Sign up dialog
+            registerLabel.addMouseListener(new MouseAdapter() {
+                @Override
+                public void mouseClicked(MouseEvent e) {
+                    JDialog registerDialog = new JDialog();
+                    registerDialog.setLayout(null);
+
+                    JLabel userNameLabel = new JLabel("Username:", SwingConstants.CENTER);
+                    userNameLabel.setBounds(100, 5, 100, 25);
+                    registerDialog.add(userNameLabel);
+
+                    JTextField userNameField = new JTextField();
+                    userNameField.setBounds(25, 30, 250, 30);
+                    registerDialog.add(userNameField);
+
+                    JLabel passwordLabel = new JLabel("Password:", SwingConstants.CENTER);
+                    passwordLabel.setBounds(100, 65, 100, 25);
+                    registerDialog.add(passwordLabel);
+
+                    JPasswordField passwordField = new JPasswordField();
+                    passwordField.setBounds(25, 90, 250, 30);
+                    registerDialog.add(passwordField);
+
+                    JButton registerButton = new JButton("Sign up");
+                    registerButton.setBounds(100, 130, 100, 50);
+
+                    // Create new row in database
+                    registerButton.addActionListener (e1 -> {
+                        try {
+                            Statement stm = connection.createStatement();
+                            ResultSet rs = stm.executeQuery("SELECT * FROM users WHERE username = '" +
+                                    userNameField.getText() + "' and password = '" + passwordField.getText() + "';");
+                            if (rs.next()) {
+                                parseUser(rs);
+
+                                canvas.setVisible(false);
+                                generateDashboard();
+                                registerDialog.setVisible(false);
+                            }
+                        } catch (SQLException throwables) {
+                            throwables.printStackTrace();
+                        }
+                    });
+                    registerDialog.add(registerButton);
+
+                    registerDialog.setSize(300,300);
+                    registerDialog.setVisible(true);
+                }
+            });
+            canvas.add(registerLabel);
+
         }
+        // Some user is logged in - show name and logout button
         else {
             JLabel loggedinUser = new JLabel(prepareHTML("white", "4", "Hello, " + loggedIn.getFirstName() + "!"));
             loggedinUser.setBounds(1050, 5, 230, 50);
@@ -108,18 +184,35 @@ public class Dashboard {
             }
         }
 
+        // List auctions
+        ArrayList<Auction> auctions = new ArrayList<>();
+
         try {
-            int i = 70;
             Statement stm = connection.createStatement();
             ResultSet rs = stm.executeQuery("SELECT * FROM auctions ORDER BY name LIMIT 5;");
             while (rs.next()) {
-                JLabel auctionLabel = new JLabel(prepareHTML("black", "4", rs.getString("name")));
-                auctionLabel.setBounds(100, i, 1080, 80);
-                canvas.add(auctionLabel);
-                i += 80;
+                auctions.add(new Auction(rs.getInt("id"), rs.getInt("organizer_id"),
+                        rs.getInt("charity_id"), rs.getString("name"),
+                        rs.getString("description"), new Datetime(rs.getString("auction_start")),
+                        new Datetime(rs.getString("auction_end"))));
             }
-        } catch (SQLException throwables) {
+        } catch (SQLException | ParseException throwables) {
             throwables.printStackTrace();
+        }
+
+        int i = 70;
+        for (Auction a : auctions) {
+            JLabel auctionLabel = new JLabel(prepareHTML("black", "4", a.getName()));
+            auctionLabel.setBounds(100, i, 1080, 80);
+            auctionLabel.addMouseListener(new MouseAdapter() {
+                @Override
+                public void mouseClicked(MouseEvent e) {
+                    a.generateAuctionInfo();
+                }
+            });
+
+            canvas.add(auctionLabel);
+            i += 80;
         }
 
         frame.add(canvas);
@@ -130,6 +223,11 @@ public class Dashboard {
         frame.setVisible(true);
     }
 
+    /**
+     * Parse user data from database and determine their class
+     * @param rs found user
+     * @throws SQLException database error
+     */
     private void parseUser(ResultSet rs) throws SQLException {
         boolean op = false;
         String op_ico_number = null;
@@ -162,6 +260,9 @@ public class Dashboard {
         }
     }
 
+    /**
+     * Create additional labels and buttons according to the class of logged in user
+     */
     private void createComponents() {
         JLabel createAuctionLabel = new JLabel(prepareHTML("white", "4", "Create new auction"), SwingConstants.CENTER);
         createAuctionLabel.setBounds(5, 5, 150, 50);
@@ -169,17 +270,27 @@ public class Dashboard {
             @Override
             public void mouseClicked(MouseEvent e) {
                 Auction auction = new Auction();
-                canvas.setVisible(false);
-                generateDashboard();
+                frame.remove(canvas);
+                frame.setVisible(false);
             }
         });
         components.add(createAuctionLabel);
     }
 
+    /**
+     * Prepare string in HTML format to easily change color, size or font of text
+     * @param color text color
+     * @param size text size
+     * @param text text
+     * @return prepared text in HTML format
+     */
     private String prepareHTML(String color, String size, String text) {
         return "<html><font color='" + color + "' face='Verdana' size='" + size + "'>" + text + "</font></html>";
     }
 
+    /**
+     * Create blue bar at the top of window
+     */
     private static class DashboardCanvas extends JPanel {
         protected void paintComponent(Graphics g) {
             super.paintComponent(g);

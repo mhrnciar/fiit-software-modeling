@@ -14,6 +14,16 @@ public class Datetime {
     int second;
     String timezone;
 
+    /**
+     * Constructor from separate parts with timezone
+     * @param year
+     * @param month
+     * @param day
+     * @param hour
+     * @param minute
+     * @param second
+     * @param timezone
+     */
     public Datetime(int year, int month, int day, int hour, int minute, int second, String timezone) {
         this.year = year;
         this.month = month;
@@ -24,6 +34,15 @@ public class Datetime {
         this.timezone = timezone;
     }
 
+    /**
+     * Constructor from separate parts without timezone
+     * @param year
+     * @param month
+     * @param day
+     * @param hour
+     * @param minute
+     * @param second
+     */
     public Datetime(int year, int month, int day, int hour, int minute, int second) {
         this.year = year;
         this.month = month;
@@ -33,6 +52,11 @@ public class Datetime {
         this.second = second;
     }
 
+    /**
+     * Constructor from string
+     * @param datetime string in format "yyyy-mm-dd HH:MM:SS"
+     * @throws ParseException parsing error
+     */
     public Datetime(String datetime) throws ParseException {
         Date date = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").parse(datetime);
         Calendar cal = Calendar.getInstance();
@@ -45,6 +69,10 @@ public class Datetime {
         this.second = cal.get(Calendar.SECOND);
     }
 
+    /**
+     * Constructor from java Date object
+     * @param datetime date object
+     */
     public Datetime(Date datetime) {
         Calendar cal = Calendar.getInstance();
         cal.setTime(datetime);

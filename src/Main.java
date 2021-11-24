@@ -7,10 +7,15 @@ public class Main {
         Dashboard d = new Dashboard(conn);
     }
 
+    /**
+     * Establish connection to SQLite database which will be used to access data about auctions,
+     * users, charities, ...
+     * @return connection to SQLite database
+     */
     private static Connection connect() {
         Connection conn = null;
         try {
-            String url = "jdbc:sqlite:" + "charity.sqlite";
+            String url = "jdbc:sqlite:charity.sqlite";
             conn = DriverManager.getConnection(url);
             System.out.println("Connection successful");
 
