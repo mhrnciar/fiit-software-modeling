@@ -8,7 +8,8 @@ public class Charity {
     String description;
     Bank bank;
 
-    public Charity(String name, String description, Bank bank) {
+    public Charity(int id, String name, String description, Bank bank) {
+        this.id = id;
         this.name = name;
         this.description = description;
         this.bank = bank;

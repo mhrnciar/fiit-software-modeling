@@ -6,6 +6,7 @@ import java.sql.SQLException;
 import java.sql.Statement;
 
 public class User {
+    Connection connection;
     int id;
     String firstName;
     String lastName;
@@ -15,8 +16,9 @@ public class User {
     String OP;
     String ICO;
 
-    public User(int id, String firstName, String lastName, String username, String street,
-                String city, String zip, String op_ico_number, boolean op) {
+    public User(Connection conn, int id, String firstName, String lastName, String username,
+                String street, String city, String zip, String op_ico_number, boolean op) {
+        this.connection = conn;
         this.id = id;
         this.firstName = firstName;
         this.lastName = lastName;
@@ -34,10 +36,7 @@ public class User {
         this.lastName = lastName;
 
         try {
-            String url = "jdbc:sqlite:" + "charity.sqlite";
-            Connection conn = DriverManager.getConnection(url);
-
-            Statement stm = conn.createStatement();
+            Statement stm = connection.createStatement();
             stm.executeQuery("UPDATE users SET first_name = " + this.firstName +
                     ", last_name = " + this.lastName +  " WHERE id = " + this.id + ";");
 
@@ -50,10 +49,7 @@ public class User {
         this.username = username;
 
         try {
-            String url = "jdbc:sqlite:" + "charity.sqlite";
-            Connection conn = DriverManager.getConnection(url);
-
-            Statement stm = conn.createStatement();
+            Statement stm = connection.createStatement();
             stm.executeQuery("UPDATE users SET username = " + this.username + " WHERE id = " + this.id + ";");
 
         } catch (SQLException e) {
@@ -73,10 +69,7 @@ public class User {
         this.password = password;
 
         try {
-            String url = "jdbc:sqlite:" + "charity.sqlite";
-            Connection conn = DriverManager.getConnection(url);
-
-            Statement stm = conn.createStatement();
+            Statement stm = connection.createStatement();
             stm.executeQuery("UPDATE users SET password = " + this.password + " WHERE id = " + this.id + ";");
 
         } catch (SQLException e) {
