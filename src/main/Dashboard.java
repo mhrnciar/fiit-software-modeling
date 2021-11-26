@@ -52,8 +52,8 @@ public class Dashboard {
 
         // No user is logged in - show sign in and sign up buttons
         if (loggedIn == null) {
-            JLabel loginLabel = new JLabel(prepareHTML("white", "5", "Sign in"), SwingConstants.CENTER);
-            loginLabel.setBounds(1000, 5, 140, 50);
+            JLabel loginLabel = new JLabel(prepareHTML("white", "5", "Sign in"));
+            loginLabel.setBounds(1050, 5, 100, 50);
 
             // Sign in dialog
             loginLabel.addMouseListener(new MouseAdapter() {
@@ -106,8 +106,8 @@ public class Dashboard {
             });
             canvas.add(loginLabel);
 
-            JLabel registerLabel = new JLabel(prepareHTML("white", "5", "Sign up"), SwingConstants.CENTER);
-            registerLabel.setBounds(1140, 5, 140, 50);
+            JLabel registerLabel = new JLabel(prepareHTML("white", "5", "Sign up"));
+            registerLabel.setBounds(1175, 5, 80, 50);
 
             // Sign up dialog
             registerLabel.addMouseListener(new MouseAdapter() {
@@ -167,8 +167,8 @@ public class Dashboard {
             loggedinUser.setBounds(1050, 5, 230, 50);
             canvas.add(loggedinUser);
 
-            JLabel logoutLabel = new JLabel(prepareHTML("white", "5", "Logout"), SwingConstants.CENTER);
-            logoutLabel.setBounds(1150, 5, 90, 50);
+            JLabel logoutLabel = new JLabel(prepareHTML("white", "5", "Logout"));
+            logoutLabel.setBounds(1175, 5, 80, 50);
             logoutLabel.addMouseListener(new MouseAdapter() {
                 @Override
                 public void mouseClicked(MouseEvent e) {
@@ -267,17 +267,26 @@ public class Dashboard {
      * Create additional labels and buttons according to the class of logged in user
      */
     private void createComponents() {
-        JLabel createAuctionLabel = new JLabel(prepareHTML("white", "4", "Create new auction"), SwingConstants.CENTER);
-        createAuctionLabel.setBounds(5, 5, 150, 50);
-        createAuctionLabel.addMouseListener(new MouseAdapter() {
-            @Override
-            public void mouseClicked(MouseEvent e) {
-                Auction auction = new Auction(loggedIn, connection);
-                frame.remove(canvas);
-                frame.setVisible(false);
-            }
-        });
-        components.add(createAuctionLabel);
+        components.clear();
+
+        if (loggedIn.getClass() == Organizer.class) {
+            JLabel createAuctionLabel = new JLabel(prepareHTML("white", "4", "Create new auction"), SwingConstants.CENTER);
+            createAuctionLabel.setBounds(10, 5, 150, 50);
+            createAuctionLabel.addMouseListener(new MouseAdapter() {
+                @Override
+                public void mouseClicked(MouseEvent e) {
+                    Auction auction = new Auction(loggedIn, connection);
+                    frame.remove(canvas);
+                    frame.setVisible(false);
+                }
+            });
+            components.add(createAuctionLabel);
+        }
+        else if (loggedIn.getClass() == Bidder.class) {
+            JLabel reportAuctionLabel = new JLabel(prepareHTML("white", "4", "Report auction"), SwingConstants.CENTER);
+            reportAuctionLabel.setBounds(10, 5, 150, 50);
+            components.add(reportAuctionLabel);
+        }
     }
 
     /**

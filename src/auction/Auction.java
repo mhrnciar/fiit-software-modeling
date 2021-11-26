@@ -9,7 +9,6 @@ import java.awt.*;
 import java.awt.event.*;
 import java.sql.*;
 import java.text.ParseException;
-import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.Date;
 
@@ -64,20 +63,96 @@ public class Auction {
      * Generate screen with information about auction
      */
     public void generateAuctionInfo() {
-        frame = new JFrame(name);
+        frame = new JFrame("Auction information");
         canvas = new AuctionCanvas();
 
         canvas.setLayout(null);
-        canvas.setPreferredSize(new Dimension(720, 720));
+        canvas.setPreferredSize(new Dimension(440, 720));
 
-        JLabel title = new JLabel(prepareHTML("white", "6", name),  SwingConstants.CENTER);
-        title.setBounds(50, 5, 620, 50);
+        JLabel title = new JLabel(prepareHTML("white", "5", name),  SwingConstants.CENTER);
+        title.setBounds(5, 5, 430, 50);
         canvas.add(title);
 
+        JLabel charityLabel = new JLabel("Charity:");
+        charityLabel.setBounds(20, 80, 100, 30);
+        canvas.add(charityLabel);
+
+        try {
+            Statement stm = connection.createStatement();
+            ResultSet rs = stm.executeQuery("SELECT * FROM charities WHERE id = " + charityId + ";");
+            if (rs.next()) {
+                JLabel charityText = new JLabel(rs.getString("name"), SwingConstants.CENTER);
+                charityText.setBounds(120, 80, 100, 30);
+                canvas.add(charityText);
+            }
+        } catch (SQLException throwables) {
+            throwables.printStackTrace();
+        }
+
+        JLabel descriptionLabel = new JLabel("Description:");
+        descriptionLabel.setBounds(20, 130, 100, 30);
+        canvas.add(descriptionLabel);
+
+        JTextArea descriptionText = new JTextArea(description);
+        descriptionText.setBounds(120, 130, 300, 100);
+        descriptionText.setLineWrap(true);
+        descriptionText.setEditable(false);
+        canvas.add(descriptionText);
+
+        JLabel startLabel = new JLabel("Auction start:");
+        startLabel.setBounds(20, 250, 100, 30);
+        canvas.add(startLabel);
+
+        JLabel startText = new JLabel(auctionStart.getDateString());
+        startText.setBounds(120, 250, 200, 30);
+        canvas.add(startText);
+
+        JLabel endLabel = new JLabel("Auction end:");
+        endLabel.setBounds(20, 300, 100, 30);
+        canvas.add(endLabel);
+
+        JLabel endText = new JLabel(auctionEnd.getDateString());
+        endText.setBounds(120, 300, 200, 30);
+        canvas.add(endText);
+
+        JLabel biddingsLabel = new JLabel("Biddings:");
+        biddingsLabel.setBounds(20, 350, 200, 30);
+        canvas.add(biddingsLabel);
+
+        // List biddings
+        ArrayList<Bidding> biddings = new ArrayList<>();
+
+        try {
+            Statement stm = connection.createStatement();
+            ResultSet rs = stm.executeQuery("SELECT * FROM biddings WHERE auction_id = " + id + ";");
+            while (rs.next()) {
+                biddings.add(new Bidding(connection, rs.getInt("id"), rs.getString("name"),
+                        rs.getString("description"), rs.getFloat("starting_bid"),
+                        rs.getFloat("highest_bid"), rs.getInt("highest_bidder_id"),
+                        new Datetime(rs.getString("bidding_start")), new Datetime(rs.getString("bidding_end"))));
+            }
+        } catch (SQLException | ParseException throwables) {
+            throwables.printStackTrace();
+        }
+
+        int i = 390;
+        for (Bidding b : biddings) {
+            JLabel biddingText = new JLabel(b.getName() + "\t" + b.getHighestBid());
+            biddingText.setBounds(50, i, 360, 30);
+            biddingText.addMouseListener(new MouseAdapter() {
+                @Override
+                public void mouseClicked(MouseEvent e) {
+                    b.generateBiddingInfo();
+                }
+            });
+
+            canvas.add(biddingText);
+            i += 40;
+        }
 
         frame.add(canvas);
 
-        frame.setSize(720, 720);
+        frame.setSize(440, 720);
         frame.setLocationRelativeTo(null);
         frame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
         frame.setVisible(true);
@@ -91,7 +166,7 @@ public class Auction {
         canvas = new AuctionCanvas();
 
         canvas.setLayout(null);
-        canvas.setPreferredSize(new Dimension(720, 720));
+        canvas.setPreferredSize(new Dimension(440, 520));
 
         JLabel title = new JLabel(prepareHTML("white", "6", "Create new auction"),  SwingConstants.CENTER);
         title.setBounds(5, 5, 430, 50);
@@ -181,7 +256,7 @@ public class Auction {
 
         frame.add(canvas);
 
-        frame.setSize(440, 480);
+        frame.setSize(440, 520);
         frame.setLocationRelativeTo(null);
         frame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
         frame.setVisible(true);
@@ -207,17 +282,6 @@ public class Auction {
         } catch (SQLException e) {
             System.out.println(e.getMessage());
         }
-    }
-
-    /**
-     * Prepare string in HTML format to easily change color, size or font of text
-     * @param color text color
-     * @param size text size
-     * @param text text
-     * @return prepared text in HTML format
-     */
-    private String prepareHTML(String color, String size, String text) {
-        return "<html><font color='" + color + "' face='Verdana' size='" + size + "'>" + text + "</font></html>";
     }
 
     public int getId() {
@@ -249,6 +313,17 @@ public class Auction {
     }
 
     /**
+     * Prepare string in HTML format to easily change color, size or font of text
+     * @param color text color
+     * @param size text size
+     * @param text text
+     * @return prepared text in HTML format
+     */
+    private String prepareHTML(String color, String size, String text) {
+        return "<html><font color='" + color + "' face='Verdana' size='" + size + "'>" + text + "</font></html>";
+    }
+
+    /**
      * Create green bar at the top of window
      */
     private static class AuctionCanvas extends JPanel {
@@ -258,7 +333,7 @@ public class Auction {
             setBackground(Color.white);
 
             g2d.setColor(Color.getHSBColor(0.33f, 1.0f, 0.5f));
-            g2d.fillRect(0, 0, 720, 60);
+            g2d.fillRect(0, 0, 440, 60);
         }
     }
 }
