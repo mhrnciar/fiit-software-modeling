@@ -16,13 +16,13 @@ public class Datetime {
 
     /**
      * Constructor from separate parts with timezone
-     * @param year
-     * @param month
-     * @param day
-     * @param hour
-     * @param minute
-     * @param second
-     * @param timezone
+     * @param year year
+     * @param month month
+     * @param day day
+     * @param hour hour
+     * @param minute minute
+     * @param second second
+     * @param timezone timezone
      */
     public Datetime(int year, int month, int day, int hour, int minute, int second, String timezone) {
         this.year = year;
@@ -36,12 +36,12 @@ public class Datetime {
 
     /**
      * Constructor from separate parts without timezone
-     * @param year
-     * @param month
-     * @param day
-     * @param hour
-     * @param minute
-     * @param second
+     * @param year year
+     * @param month month
+     * @param day day
+     * @param hour hour
+     * @param minute minute
+     * @param second second
      */
     public Datetime(int year, int month, int day, int hour, int minute, int second) {
         this.year = year;
@@ -117,6 +117,17 @@ public class Datetime {
             datetime += ":" + second;
         }
         return datetime;
+    }
+
+    public boolean isLower(Datetime d) {
+        if (this.year < d.year) {
+            return true;
+        } else if (this.year > d.year || this.month < d.month) {
+            return true;
+        } else if (this.month > d.month || this.day < d.day) {
+            return true;
+        }
+        return false;
     }
 
     public int getYear() {

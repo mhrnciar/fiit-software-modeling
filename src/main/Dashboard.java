@@ -63,19 +63,19 @@ public class Dashboard {
                     loginDialog.setLayout(null);
 
                     JLabel userNameLabel = new JLabel("Username:", SwingConstants.CENTER);
-                    userNameLabel.setBounds(100, 5, 100, 25);
+                    userNameLabel.setBounds(100, 5, 100, 30);
                     loginDialog.add(userNameLabel);
 
                     JTextField userNameField = new JTextField();
-                    userNameField.setBounds(25, 30, 250, 30);
+                    userNameField.setBounds(25, 35, 250, 30);
                     loginDialog.add(userNameField);
 
                     JLabel passwordLabel = new JLabel("Password:", SwingConstants.CENTER);
-                    passwordLabel.setBounds(100, 65, 100, 25);
+                    passwordLabel.setBounds(100, 70, 100, 30);
                     loginDialog.add(passwordLabel);
 
                     JPasswordField passwordField = new JPasswordField();
-                    passwordField.setBounds(25, 90, 250, 30);
+                    passwordField.setBounds(25, 100, 250, 30);
                     loginDialog.add(passwordField);
 
                     JButton loginButton = new JButton("Log in");
@@ -83,6 +83,12 @@ public class Dashboard {
 
                     // Check if user exists and passwords match
                     loginButton.addActionListener (e1 -> {
+                        if (userNameField.getText().isEmpty() || passwordField.getText().isEmpty()) {
+                            JOptionPane.showMessageDialog(canvas, "All fields must be filled in and in right format!",
+                                    "Warning", JOptionPane.WARNING_MESSAGE);
+                            return;
+                        }
+
                         try {
                             Statement stm = connection.createStatement();
                             ResultSet rs = stm.executeQuery("SELECT * FROM users WHERE username = '" +
@@ -94,6 +100,11 @@ public class Dashboard {
                                 frame.remove(canvas);
                                 generateDashboard();
                                 loginDialog.setVisible(false);
+                            }
+                            else {
+                                JOptionPane.showMessageDialog(loginDialog, "Username and password don't match!",
+                                        "Warning", JOptionPane.WARNING_MESSAGE);
+                                passwordField.setText("");
                             }
                         } catch (SQLException throwables) {
                             throwables.printStackTrace();

@@ -233,6 +233,27 @@ public class User {
             String state = stateField.getText();
             String zip = zipField.getText();
 
+            if (firstName.isEmpty() || lastName.isEmpty() || username.isEmpty() || password.isEmpty() ||
+                    passwordAgainField.getText().isEmpty() || street.isEmpty() || city.isEmpty() || state.isEmpty() ||
+                    zip.isEmpty()) {
+                JOptionPane.showMessageDialog(canvas, "All fields must be filled in and in right format!",
+                        "Warning", JOptionPane.WARNING_MESSAGE);
+                return;
+            }
+
+            try {
+                Statement stm = connection.createStatement();
+                ResultSet rs = stm.executeQuery("SELECT * FROM users WHERE username = '" + username + "';");
+                if (rs.next()) {
+                    JOptionPane.showMessageDialog(canvas, "Username already exists!",
+                            "Warning", JOptionPane.WARNING_MESSAGE);
+                    userNameField.setText("");
+                    return;
+                }
+            } catch (SQLException throwables) {
+                throwables.printStackTrace();
+            }
+
             if (opToggle.isSelected())
                 OP = opField.getText();
             else
@@ -241,7 +262,8 @@ public class User {
             boolean bidder = userToggle.isSelected();
 
             if (!password.equals(passwordAgainField.getText())) {
-                JOptionPane.showMessageDialog(canvas, "Passwords don't match!", "Warning", JOptionPane.WARNING_MESSAGE);
+                JOptionPane.showMessageDialog(canvas, "Passwords don't match!",
+                        "Warning", JOptionPane.WARNING_MESSAGE);
                 passwordField.setText("");
                 passwordAgainField.setText("");
             }
@@ -338,7 +360,7 @@ public class User {
                     "', '" + street + "', '" + city + "', '" + state + "', '" + zip + "', '" + ICO + "', ";
         } else if (ICO == null) {
             query += "(username, password, first_name, last_name, street, city, state, " +
-                    "zip, ico, is_bidder, is_organizer, is_operator, created_at, updated_at) " +
+                    "zip, op, is_bidder, is_organizer, is_operator, created_at, updated_at) " +
                     "VALUES ('" + username + "', '" + password + "', '" + firstName + "', '" + lastName +
                     "', '" + street + "', '" + city + "', '" + state + "', '" + zip + "', '" + OP + "', ";
         }

@@ -2,7 +2,6 @@ package auction;
 
 import users.*;
 import payment.*;
-import main.*;
 
 import javax.swing.*;
 import java.awt.*;
@@ -11,7 +10,6 @@ import java.sql.*;
 import java.text.ParseException;
 import java.util.*;
 import java.util.Date;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 public class Auction {
     JFrame frame;
@@ -68,7 +66,7 @@ public class Auction {
         canvas = new AuctionCanvas();
 
         canvas.setLayout(null);
-        canvas.setPreferredSize(new Dimension(440, 720));
+        canvas.setPreferredSize(new Dimension(440, 600));
 
         JLabel title = new JLabel(prepareHTML("white", "5", name),  SwingConstants.CENTER);
         title.setBounds(5, 5, 430, 50);
@@ -127,7 +125,7 @@ public class Auction {
             Statement stm = connection.createStatement();
             ResultSet rs = stm.executeQuery("SELECT * FROM biddings WHERE auction_id = " + id + ";");
             while (rs.next()) {
-                biddings.add(new Bidding(connection, rs.getInt("id"), id, rs.getString("name"),
+                biddings.add(new Bidding(connection, loggedIn, rs.getInt("id"), id, rs.getString("name"),
                         rs.getString("description"), rs.getFloat("starting_bid"),
                         rs.getFloat("highest_bid"), rs.getInt("highest_bidder_id"),
                         new Datetime(rs.getString("bidding_start")), new Datetime(rs.getString("bidding_end"))));
@@ -162,7 +160,7 @@ public class Auction {
 
         frame.add(canvas);
 
-        frame.setSize(440, 720);
+        frame.setSize(440, 600);
         frame.setLocationRelativeTo(null);
         frame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
         frame.setVisible(true);
@@ -252,10 +250,21 @@ public class Auction {
             this.name = nameField.getText();
             this.description = descriptionField.getText();
             this.charityId = charitySelect.getSelectedIndex() + 1;
-            Date startDate = (Date) startDateSpinner.getValue();
-            Date endDate = (Date) endDateSpinner.getValue();
-            this.auctionStart = new Datetime(startDate);
-            this.auctionEnd = new Datetime(endDate);
+            this.auctionStart = new Datetime((Date) startDateSpinner.getValue());
+            this.auctionEnd = new Datetime((Date) endDateSpinner.getValue());
+
+            if (name.isEmpty() || description.isEmpty()) {
+                JOptionPane.showMessageDialog(canvas, "All fields must be filled in and in right format!",
+                        "Warning", JOptionPane.WARNING_MESSAGE);
+                return;
+            }
+
+            if (!auctionStart.isLower(auctionEnd)) {
+                JOptionPane.showMessageDialog(canvas, "Start date must be before end date!",
+                        "Warning", JOptionPane.WARNING_MESSAGE);
+                return;
+            }
+
             save();
 
             Bidding b = new Bidding(connection, id, loggedIn);

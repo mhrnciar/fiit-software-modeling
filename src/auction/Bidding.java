@@ -5,6 +5,8 @@ import users.*;
 
 import javax.swing.*;
 import java.awt.*;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -27,9 +29,10 @@ public class Bidding {
     Datetime biddingStart;
     Datetime biddingEnd;
 
-    public Bidding(Connection conn, int id, int auctionId, String name, String description, float startingBid,
-                   float highestBid, int highestBidderId, Datetime biddingStart, Datetime biddingEnd) {
+    public Bidding(Connection conn, User loggedIn, int id, int auctionId, String name, String description,
+                   float startingBid, float highestBid, int highestBidderId, Datetime biddingStart, Datetime biddingEnd) {
         this.connection = conn;
+        this.loggedIn = loggedIn;
 
         this.id = id;
         this.auctionId = auctionId;
@@ -55,15 +58,164 @@ public class Bidding {
         canvas = new BiddingCanvas();
 
         canvas.setLayout(null);
-        canvas.setPreferredSize(new Dimension(440, 720));
+        canvas.setPreferredSize(new Dimension(440, 520));
 
         JLabel title = new JLabel(prepareHTML("white", "5", name),  SwingConstants.CENTER);
         title.setBounds(5, 5, 430, 50);
         canvas.add(title);
 
+        if (loggedIn.getClass() == Bidder.class) {
+            JLabel makeBidLabel = new JLabel(prepareHTML("white", "4", "Make new bid"));
+            makeBidLabel.setBounds(10, 5, 100, 50);
+            makeBidLabel.addMouseListener(new MouseAdapter() {
+                @Override
+                public void mouseClicked(MouseEvent e) {
+                    JDialog bidDialog = new JDialog();
+                    bidDialog.setLayout(null);
+
+                    JLabel prevLabel;
+                    if (highestBid == 0) {
+                        prevLabel = new JLabel("Starting bid: " + startingBid + "€");
+                        prevLabel.setBounds(20, 5, 200, 30);
+                        bidDialog.add(prevLabel);
+                    } else {
+                        prevLabel = new JLabel("Highest bid: " + highestBid + "€");
+                        prevLabel.setBounds(20, 5, 200, 30);
+                        bidDialog.add(prevLabel);
+                    }
+
+                    JLabel newLabel = new JLabel("New bid:");
+                    newLabel.setBounds(20, 45, 100, 30);
+                    bidDialog.add(newLabel);
+
+                    JSpinner newBidSpinner = new JSpinner(new SpinnerNumberModel(highestBid, null, null, 1.0));
+                    newBidSpinner.setBounds(120, 45, 100, 30);
+                    bidDialog.add(newBidSpinner);
+
+                    JButton confirmButton = new JButton("Confirm");
+                    confirmButton.setBounds(70, 130, 100, 50);
+
+                    // Check if user exists and passwords match
+                    confirmButton.addActionListener (e1 -> {
+                        float newBid = (Float) newBidSpinner.getValue();
+                        if (newBid <= highestBid) {
+                            JOptionPane.showMessageDialog(canvas, "New bid must be higher than previous one!",
+                                    "Warning", JOptionPane.WARNING_MESSAGE);
+                            return;
+                        }
+
+                        highestBid = newBid;
+
+                        try {
+                            Statement stm = connection.createStatement();
+                            stm.executeUpdate("UPDATE biddings SET highest_bid = " + highestBid + ", " +
+                                    "highest_bidder_id = " + loggedIn.getId() + " WHERE id = " + id + ";");
+
+                            frame.remove(canvas);
+                            frame.setVisible(false);
+                            bidDialog.setVisible(false);
+                            generateBiddingInfo();
+
+                        } catch (SQLException throwables) {
+                            throwables.printStackTrace();
+                        }
+                    });
+                    bidDialog.add(confirmButton);
+
+                    bidDialog.setSize(240,300);
+                    bidDialog.setVisible(true);
+                }
+            });
+            canvas.add(makeBidLabel);
+        }
+
+        JLabel charityLabel = new JLabel("Auction:");
+        charityLabel.setBounds(20, 80, 100, 30);
+        canvas.add(charityLabel);
+
+        try {
+            Statement stm = connection.createStatement();
+            ResultSet rs = stm.executeQuery("SELECT * FROM auctions WHERE id = " + auctionId + ";");
+            if (rs.next()) {
+                JLabel auctionText = new JLabel(rs.getString("name"));
+                auctionText.setBounds(120, 80, 250, 30);
+                canvas.add(auctionText);
+            }
+        } catch (SQLException throwables) {
+            throwables.printStackTrace();
+        }
+
+        JLabel descriptionLabel = new JLabel("Description:");
+        descriptionLabel.setBounds(20, 130, 100, 30);
+        canvas.add(descriptionLabel);
+
+        JTextArea descriptionText = new JTextArea(description);
+        descriptionText.setBounds(120, 130, 300, 100);
+        descriptionText.setLineWrap(true);
+        descriptionText.setEditable(false);
+        canvas.add(descriptionText);
+
+        JLabel startingBidLabel = new JLabel("Starting bid:");
+        startingBidLabel.setBounds(20, 250, 100, 30);
+        canvas.add(startingBidLabel);
+
+        JLabel startingBidText = new JLabel("" + startingBid + "€");
+        startingBidText.setBounds(120, 250, 200, 30);
+        canvas.add(startingBidText);
+
+        int i = 300;
+        if (highestBid != 0) {
+            String bidderName = "";
+            try {
+                Statement stm = connection.createStatement();
+                ResultSet rs = stm.executeQuery("SELECT * FROM users WHERE id = " + highestBidderId + ";");
+                if (rs.next()) {
+                    bidderName = rs.getString("username");
+                }
+            } catch (SQLException throwables) {
+                throwables.printStackTrace();
+            }
+
+            JLabel highestBidLabel = new JLabel("Highest bid:");
+            highestBidLabel.setBounds(20, i, 100, 30);
+            canvas.add(highestBidLabel);
+
+            JLabel highestBidText = new JLabel("" + highestBid + "€");
+            highestBidText.setBounds(120, i, 200, 30);
+            canvas.add(highestBidText);
+
+            i += 50;
+
+            JLabel highestBidderLabel = new JLabel("Highest bidder:");
+            highestBidderLabel.setBounds(20, i, 100, 30);
+            canvas.add(highestBidderLabel);
+
+            JLabel highestBidderText = new JLabel("" + bidderName);
+            highestBidderText.setBounds(120, i, 200, 30);
+            canvas.add(highestBidderText);
+
+            i += 50;
+        }
+
+        JLabel startLabel = new JLabel("Bidding start:");
+        startLabel.setBounds(20, i, 100, 30);
+        canvas.add(startLabel);
+
+        JLabel startText = new JLabel(biddingStart.getDateString());
+        startText.setBounds(120, i, 200, 30);
+        canvas.add(startText);
+
+        JLabel endLabel = new JLabel("Bidding end:");
+        endLabel.setBounds(20, i+50, 100, 30);
+        canvas.add(endLabel);
+
+        JLabel endText = new JLabel(biddingEnd.getDateString());
+        endText.setBounds(120, i+50, 200, 30);
+        canvas.add(endText);
+
         frame.add(canvas);
 
-        frame.setSize(440, 720);
+        frame.setSize(440, i+150);
         frame.setLocationRelativeTo(null);
         frame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
         frame.setVisible(true);
@@ -83,7 +235,7 @@ public class Bidding {
         title.setBounds(5, 5, 430, 50);
         canvas.add(title);
 
-        JLabel nameLabel = new JLabel("Name:", SwingConstants.CENTER);
+        JLabel nameLabel = new JLabel("Name:");
         nameLabel.setBounds(20, 80, 100, 30);
         canvas.add(nameLabel);
 
@@ -91,7 +243,7 @@ public class Bidding {
         nameField.setBounds(140, 80, 250, 30);
         canvas.add(nameField);
 
-        JLabel descriptionLabel = new JLabel("Description:", SwingConstants.CENTER);
+        JLabel descriptionLabel = new JLabel("Description:");
         descriptionLabel.setBounds(20, 130, 100, 30);
         canvas.add(descriptionLabel);
 
@@ -101,7 +253,7 @@ public class Bidding {
         descriptionField.setLineWrap(true);
         canvas.add(descriptionField);
 
-        JLabel startingBidLabel = new JLabel("Starting bid:", SwingConstants.CENTER);
+        JLabel startingBidLabel = new JLabel("Starting bid:");
         startingBidLabel.setBounds(20, 240, 100, 30);
         canvas.add(startingBidLabel);
 
@@ -109,7 +261,7 @@ public class Bidding {
         startingBidSpinner.setBounds(140, 240, 250, 30);
         canvas.add(startingBidSpinner);
 
-        JLabel startLabel = new JLabel("Bidding start:", SwingConstants.CENTER);
+        JLabel startLabel = new JLabel("Bidding start:");
         startLabel.setBounds(20, 290, 100, 30);
         canvas.add(startLabel);
 
@@ -119,7 +271,7 @@ public class Bidding {
         startDateSpinner.setBounds(140, 290, 290, 30);
         canvas.add(startDateSpinner);
 
-        JLabel timeLabel = new JLabel("Bidding end:", SwingConstants.CENTER);
+        JLabel timeLabel = new JLabel("Bidding end:");
         timeLabel.setBounds(20, 340, 100, 30);
         canvas.add(timeLabel);
 
@@ -138,6 +290,19 @@ public class Bidding {
             this.startingBid = ((Double) startingBidSpinner.getValue()).floatValue();
             this.biddingStart = new Datetime((Date) startDateSpinner.getValue());
             this.biddingEnd = new Datetime((Date) endDateSpinner.getValue());
+
+            if (name.isEmpty() || description.isEmpty() || startingBid == 0) {
+                JOptionPane.showMessageDialog(canvas, "All fields must be filled in and in right format!",
+                        "Warning", JOptionPane.WARNING_MESSAGE);
+                return;
+            }
+
+            if (!biddingStart.isLower(biddingEnd)) {
+                JOptionPane.showMessageDialog(canvas, "Start date must be before end date!",
+                        "Warning", JOptionPane.WARNING_MESSAGE);
+                return;
+            }
+
             save();
 
             Bidding b = new Bidding(connection, auctionId, loggedIn);
@@ -155,6 +320,19 @@ public class Bidding {
             this.startingBid = ((Double) startingBidSpinner.getValue()).floatValue();
             this.biddingStart = new Datetime((Date) startDateSpinner.getValue());
             this.biddingEnd = new Datetime((Date) endDateSpinner.getValue());
+
+            if (name.isEmpty() || description.isEmpty() || startingBid == 0) {
+                JOptionPane.showMessageDialog(canvas, "All fields must be filled in and in right format!",
+                        "Warning", JOptionPane.WARNING_MESSAGE);
+                return;
+            }
+
+            if (!biddingStart.isLower(biddingEnd)) {
+                JOptionPane.showMessageDialog(canvas, "Start date must be before end date!",
+                        "Warning", JOptionPane.WARNING_MESSAGE);
+                return;
+            }
+
             save();
 
             Dashboard d = new Dashboard(connection, loggedIn);
