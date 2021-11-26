@@ -3,6 +3,9 @@ package auction;
 import javax.swing.*;
 import java.awt.*;
 import java.sql.Connection;
+import java.sql.SQLException;
+import java.sql.Statement;
+import java.util.Date;
 
 public class Bidding {
     JFrame frame;
@@ -10,6 +13,7 @@ public class Bidding {
     Connection connection;
 
     int id;
+    int auctionId;
     String name;
     String description;
     float startingBid;
@@ -18,11 +22,12 @@ public class Bidding {
     Datetime biddingStart;
     Datetime biddingEnd;
 
-    public Bidding(Connection conn, int id, String name, String description, float startingBid,
+    public Bidding(Connection conn, int id, int auctionId, String name, String description, float startingBid,
                    float highestBid, int highestBidderId, Datetime biddingStart, Datetime biddingEnd) {
         this.connection = conn;
 
         this.id = id;
+        this.auctionId = auctionId;
         this.name = name;
         this.description = description;
         this.startingBid = startingBid;
@@ -81,6 +86,27 @@ public class Bidding {
 
     public Datetime getBiddingEnd() {
         return biddingEnd;
+    }
+
+    /**
+     * Save new bidding to database
+     */
+    public void save() {
+        try {
+            Datetime createdAt = new Datetime(new Date());
+            Datetime updatedAt = new Datetime(new Date());
+
+            Statement stm = connection.createStatement();
+
+            stm.executeQuery("INSERT INTO biddings (auction_id, name, description, " +
+                    "starting_bid, bidding_start, bidding_end, created_at, updated_at) " +
+                    "VALUES (" + auctionId + ", '" + name + "', '" + description + "', " + startingBid + ", '" +
+                    biddingStart.getDateString() + "', '" + biddingEnd.getDateString() + "', '" +
+                    createdAt.getDateString() + "', '" + updatedAt.getDateString() + "');");
+
+        } catch (SQLException e) {
+            System.out.println(e.getMessage());
+        }
     }
 
     /**

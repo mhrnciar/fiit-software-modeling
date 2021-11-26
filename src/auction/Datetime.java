@@ -85,7 +85,38 @@ public class Datetime {
     }
 
     public String getDateString() {
-        return "" + year + "-" + month + "-" + day + " " + hour + ":" + minute + ":" + second;
+        String datetime = "" + year;
+        if (month < 10) {
+            datetime += "-0" + month;
+        }
+        else {
+            datetime += "-" + month;
+        }
+        if (day < 10) {
+            datetime += "-0" + day;
+        }
+        else {
+            datetime += "-" + day;
+        }
+        if (hour < 10) {
+            datetime += " 0" + hour;
+        }
+        else {
+            datetime += " " + hour;
+        }
+        if (minute < 10) {
+            datetime += ":0" + minute;
+        }
+        else {
+            datetime += ":" + minute;
+        }
+        if (second < 10) {
+            datetime += ":0" + second;
+        }
+        else {
+            datetime += ":" + second;
+        }
+        return datetime;
     }
 
     public int getYear() {

@@ -81,7 +81,7 @@ public class Auction {
             Statement stm = connection.createStatement();
             ResultSet rs = stm.executeQuery("SELECT * FROM charities WHERE id = " + charityId + ";");
             if (rs.next()) {
-                JLabel charityText = new JLabel(rs.getString("name"), SwingConstants.CENTER);
+                JLabel charityText = new JLabel(rs.getString("name"));
                 charityText.setBounds(120, 80, 100, 30);
                 canvas.add(charityText);
             }
@@ -126,7 +126,7 @@ public class Auction {
             Statement stm = connection.createStatement();
             ResultSet rs = stm.executeQuery("SELECT * FROM biddings WHERE auction_id = " + id + ";");
             while (rs.next()) {
-                biddings.add(new Bidding(connection, rs.getInt("id"), rs.getString("name"),
+                biddings.add(new Bidding(connection, rs.getInt("id"), id, rs.getString("name"),
                         rs.getString("description"), rs.getFloat("starting_bid"),
                         rs.getFloat("highest_bid"), rs.getInt("highest_bidder_id"),
                         new Datetime(rs.getString("bidding_start")), new Datetime(rs.getString("bidding_end"))));
@@ -262,28 +262,6 @@ public class Auction {
         frame.setVisible(true);
     }
 
-    /**
-     * Save new auction to database
-     */
-    public void save() {
-        try {
-            Datetime createdAt = new Datetime(new Date());
-            Datetime updatedAt = new Datetime(new Date());
-
-            Statement stm = connection.createStatement();
-
-            stm.executeQuery("INSERT INTO auctions (organizer_id, charity_id, name, " +
-                    "description, auction_start, auction_end, created_at, updated_at) " +
-                    "VALUES (" + organizerId + ", " + charityId + ", '" + name + "', '" +
-                    description + "', '" + auctionStart.getDateString() + "', '" +
-                    auctionEnd.getDateString() + "', '" + createdAt.getDateString() + "', '" +
-                    updatedAt.getDateString() + "');");
-
-        } catch (SQLException e) {
-            System.out.println(e.getMessage());
-        }
-    }
-
     public int getId() {
         return id;
     }
@@ -310,6 +288,28 @@ public class Auction {
 
     public Datetime getAuctionEnd() {
         return auctionEnd;
+    }
+
+    /**
+     * Save new auction to database
+     */
+    public void save() {
+        try {
+            Datetime createdAt = new Datetime(new Date());
+            Datetime updatedAt = new Datetime(new Date());
+
+            Statement stm = connection.createStatement();
+
+            stm.executeQuery("INSERT INTO auctions (organizer_id, charity_id, name, " +
+                    "description, auction_start, auction_end, created_at, updated_at) " +
+                    "VALUES (" + organizerId + ", " + charityId + ", '" + name + "', '" +
+                    description + "', '" + auctionStart.getDateString() + "', '" +
+                    auctionEnd.getDateString() + "', '" + createdAt.getDateString() + "', '" +
+                    updatedAt.getDateString() + "');");
+
+        } catch (SQLException e) {
+            System.out.println(e.getMessage());
+        }
     }
 
     /**

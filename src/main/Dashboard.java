@@ -87,10 +87,11 @@ public class Dashboard {
                             Statement stm = connection.createStatement();
                             ResultSet rs = stm.executeQuery("SELECT * FROM users WHERE username = '" +
                                     userNameField.getText() + "' and password = '" + passwordField.getText() + "';");
+
                             if (rs.next()) {
                                 parseUser(rs);
 
-                                canvas.setVisible(false);
+                                frame.remove(canvas);
                                 generateDashboard();
                                 loginDialog.setVisible(false);
                             }
@@ -113,49 +114,9 @@ public class Dashboard {
             registerLabel.addMouseListener(new MouseAdapter() {
                 @Override
                 public void mouseClicked(MouseEvent e) {
-                    JDialog registerDialog = new JDialog();
-                    registerDialog.setLayout(null);
-
-                    JLabel userNameLabel = new JLabel("Username:", SwingConstants.CENTER);
-                    userNameLabel.setBounds(100, 5, 100, 25);
-                    registerDialog.add(userNameLabel);
-
-                    JTextField userNameField = new JTextField();
-                    userNameField.setBounds(25, 30, 250, 30);
-                    registerDialog.add(userNameField);
-
-                    JLabel passwordLabel = new JLabel("Password:", SwingConstants.CENTER);
-                    passwordLabel.setBounds(100, 65, 100, 25);
-                    registerDialog.add(passwordLabel);
-
-                    JPasswordField passwordField = new JPasswordField();
-                    passwordField.setBounds(25, 90, 250, 30);
-                    registerDialog.add(passwordField);
-
-                    JButton registerButton = new JButton("Sign up");
-                    registerButton.setBounds(100, 130, 100, 50);
-
-                    // Create new row in database
-                    registerButton.addActionListener (e1 -> {
-                        try {
-                            Statement stm = connection.createStatement();
-                            ResultSet rs = stm.executeQuery("SELECT * FROM users WHERE username = '" +
-                                    userNameField.getText() + "' and password = '" + passwordField.getText() + "';");
-                            if (rs.next()) {
-                                parseUser(rs);
-
-                                canvas.setVisible(false);
-                                generateDashboard();
-                                registerDialog.setVisible(false);
-                            }
-                        } catch (SQLException throwables) {
-                            throwables.printStackTrace();
-                        }
-                    });
-                    registerDialog.add(registerButton);
-
-                    registerDialog.setSize(300,300);
-                    registerDialog.setVisible(true);
+                    User user = new User(connection);
+                    frame.remove(canvas);
+                    frame.setVisible(false);
                 }
             });
             canvas.add(registerLabel);
@@ -247,19 +208,19 @@ public class Dashboard {
             loggedIn = new Bidder(connection, rs.getInt("id"), rs.getString("first_name"),
                     rs.getString("last_name"), rs.getString("username"),
                     rs.getString("street"), rs.getString("city"),
-                    rs.getString("zip"), op_ico_number, op);
+                    rs.getString("state"), rs.getString("zip"), op_ico_number, op);
         }
         else if (rs.getInt("is_organizer") == 1) {
             loggedIn = new Organizer(connection, rs.getInt("id"), rs.getString("first_name"),
                     rs.getString("last_name"), rs.getString("username"),
                     rs.getString("street"), rs.getString("city"),
-                    rs.getString("zip"), op_ico_number, op);
+                    rs.getString("state"), rs.getString("zip"), op_ico_number, op);
         }
         else if (rs.getInt("is_operator") == 1) {
             loggedIn = new Operator(connection, rs.getInt("id"), rs.getString("first_name"),
                     rs.getString("last_name"), rs.getString("username"),
                     rs.getString("street"), rs.getString("city"),
-                    rs.getString("zip"), op_ico_number, op);
+                    rs.getString("state"), rs.getString("zip"), op_ico_number, op);
         }
     }
 
