@@ -166,7 +166,7 @@ public class Dashboard {
 
         int i = 70;
         for (Auction a : auctions) {
-            JLabel auctionLabel = new JLabel(prepareHTML("black", "4", a.getName()));
+            JLabel auctionLabel = new JLabel(prepareHTML("black", "5", a.getName()));
             auctionLabel.setBounds(100, i, 1080, 80);
             auctionLabel.addMouseListener(new MouseAdapter() {
                 @Override

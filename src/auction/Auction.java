@@ -11,6 +11,7 @@ import java.sql.*;
 import java.text.ParseException;
 import java.util.*;
 import java.util.Date;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 public class Auction {
     JFrame frame;
@@ -137,16 +138,25 @@ public class Auction {
 
         int i = 390;
         for (Bidding b : biddings) {
-            JLabel biddingText = new JLabel(b.getName() + "\t" + b.getHighestBid());
-            biddingText.setBounds(50, i, 360, 30);
+            JLabel biddingText = new JLabel(prepareHTML("black", "4", b.getName()));
+            biddingText.setBounds(50, i, 200, 30);
             biddingText.addMouseListener(new MouseAdapter() {
                 @Override
                 public void mouseClicked(MouseEvent e) {
                     b.generateBiddingInfo();
                 }
             });
-
             canvas.add(biddingText);
+
+            JLabel biddingAmount;
+            if (b.getHighestBid() == 0) {
+                biddingAmount = new JLabel("Starting bid: " + b.getStartingBid() + "€");
+            } else {
+                biddingAmount = new JLabel("Highest bid: " + b.getHighestBid() + "€");
+            }
+            biddingAmount.setBounds(220, i, 190, 30);
+            canvas.add(biddingAmount);
+
             i += 40;
         }
 
@@ -248,7 +258,8 @@ public class Auction {
             this.auctionEnd = new Datetime(endDate);
             save();
 
-            Dashboard d = new Dashboard(connection, loggedIn);
+            Bidding b = new Bidding(connection, id, loggedIn);
+
             frame.remove(canvas);
             frame.setVisible(false);
         });
@@ -300,12 +311,16 @@ public class Auction {
 
             Statement stm = connection.createStatement();
 
-            stm.executeQuery("INSERT INTO auctions (organizer_id, charity_id, name, " +
+            stm.executeUpdate("INSERT INTO auctions (organizer_id, charity_id, name, " +
                     "description, auction_start, auction_end, created_at, updated_at) " +
                     "VALUES (" + organizerId + ", " + charityId + ", '" + name + "', '" +
                     description + "', '" + auctionStart.getDateString() + "', '" +
                     auctionEnd.getDateString() + "', '" + createdAt.getDateString() + "', '" +
                     updatedAt.getDateString() + "');");
+
+            ResultSet rs = stm.executeQuery("SELECT * FROM auctions ORDER BY id DESC LIMIT 1");
+            if (rs.next())
+                id = rs.getInt("id");
 
         } catch (SQLException e) {
             System.out.println(e.getMessage());
