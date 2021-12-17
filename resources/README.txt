@@ -1,0 +1,1 @@
+This .sql file contains the queries to generate basic database compatible with Charity program. Use if something happened to database and it needs to be set up again.

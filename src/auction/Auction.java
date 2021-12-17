@@ -27,13 +27,13 @@ public class Auction {
 
     /**
      * Constructor for existing auction
-     * @param user user that is currently logged in
-     * @param organizerId id of organizer from database
-     * @param charityId id of charity from database
-     * @param name name of auction
-     * @param description description of auction
-     * @param auctionStart datetime of the start of the auction
-     * @param auctionEnd datetime of the end of the auction
+     * @param user          user that is currently logged in
+     * @param organizerId   id of organizer from database
+     * @param charityId     id of charity from database
+     * @param name          name of auction
+     * @param description   description of auction
+     * @param auctionStart  datetime of the start of the auction
+     * @param auctionEnd    datetime of the end of the auction
      */
     public Auction(User user, Connection conn, int id, int organizerId, int charityId, String name,
                    String description, Datetime auctionStart, Datetime auctionEnd) {
@@ -59,7 +59,7 @@ public class Auction {
     }
 
     /**
-     * Generate screen with information about auction
+     * Generate screen with information about Auction
      */
     public void generateAuctionInfo() {
         frame = new JFrame("Auction information");
@@ -76,6 +76,7 @@ public class Auction {
         charityLabel.setBounds(20, 80, 100, 30);
         canvas.add(charityLabel);
 
+        // Get Charity information from database
         try {
             Statement stm = connection.createStatement();
             ResultSet rs = stm.executeQuery("SELECT * FROM charities WHERE id = " + charityId + ";");
@@ -118,7 +119,7 @@ public class Auction {
         biddingsLabel.setBounds(20, 350, 200, 30);
         canvas.add(biddingsLabel);
 
-        // List biddings
+        // Get all Biddings from database whose auctionId matches the id of this Auction
         ArrayList<Bidding> biddings = new ArrayList<>();
 
         try {
@@ -134,6 +135,10 @@ public class Auction {
             throwables.printStackTrace();
         }
 
+        /*
+         * Display all Biddings with starting or highest bid. All Biddings will open new window with
+         * information about said Bidding
+         */
         int i = 390;
         for (Bidding b : biddings) {
             JLabel biddingText = new JLabel(prepareHTML("black", "4", b.getName()));
@@ -167,7 +172,10 @@ public class Auction {
     }
 
     /**
-     * Generate screen for creating new auction
+     * Generate screen for creating new Auction. Organizer has to insert some information by hand (name,
+     * description, ...) and some can be selected from drop-down menu (Charity). Before saving Auction, all
+     * fields are evaluated if they were filled in and in right format. Afterwards, a new window is created
+     * with fields to create first Bidding in the Auction.
      */
     public void generateAuctionCreation() {
         frame = new JFrame("Create new auction");
@@ -192,6 +200,7 @@ public class Auction {
         charityLabel.setBounds(20, 130, 100, 30);
         canvas.add(charityLabel);
 
+        // Get list of all Charities from database and save them to drop-down menu
         int i = 0;
         ArrayList<Charity> charities = new ArrayList<>();
         JComboBox<String> charitySelect = new JComboBox<>();
@@ -253,12 +262,14 @@ public class Auction {
             this.auctionStart = new Datetime((Date) startDateSpinner.getValue());
             this.auctionEnd = new Datetime((Date) endDateSpinner.getValue());
 
+            // Check if all fields have been filled in
             if (name.isEmpty() || description.isEmpty()) {
                 JOptionPane.showMessageDialog(canvas, "All fields must be filled in and in right format!",
                         "Warning", JOptionPane.WARNING_MESSAGE);
                 return;
             }
 
+            // Check if Auction start is before its end
             if (!auctionStart.isLower(auctionEnd)) {
                 JOptionPane.showMessageDialog(canvas, "Start date must be before end date!",
                         "Warning", JOptionPane.WARNING_MESSAGE);
@@ -267,6 +278,7 @@ public class Auction {
 
             save();
 
+            // Open Bidding creation window
             Bidding b = new Bidding(connection, id, loggedIn);
 
             frame.remove(canvas);
@@ -311,12 +323,11 @@ public class Auction {
     }
 
     /**
-     * Save new auction to database
+     * Save new Auction to database
      */
     public void save() {
         try {
-            Datetime createdAt = new Datetime(new Date());
-            Datetime updatedAt = new Datetime(new Date());
+            Datetime currentDate = new Datetime(new Date());
 
             Statement stm = connection.createStatement();
 
@@ -324,8 +335,8 @@ public class Auction {
                     "description, auction_start, auction_end, created_at, updated_at) " +
                     "VALUES (" + organizerId + ", " + charityId + ", '" + name + "', '" +
                     description + "', '" + auctionStart.getDateString() + "', '" +
-                    auctionEnd.getDateString() + "', '" + createdAt.getDateString() + "', '" +
-                    updatedAt.getDateString() + "');");
+                    auctionEnd.getDateString() + "', '" + currentDate.getDateString() + "', '" +
+                    currentDate.getDateString() + "');");
 
             ResultSet rs = stm.executeQuery("SELECT * FROM auctions ORDER BY id DESC LIMIT 1");
             if (rs.next())

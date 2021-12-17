@@ -24,6 +24,20 @@ public class User {
     String OP;
     String ICO;
 
+    /**
+     * Constructor for existing user
+     * @param conn          connection to database
+     * @param id            user's id in database
+     * @param firstName     first name
+     * @param lastName      last name
+     * @param username      username
+     * @param street        street from address line
+     * @param city          city from address line
+     * @param state         state from address line
+     * @param zip           zip from address line
+     * @param op_ico_number OP or ICO number, depending on op variable
+     * @param op            if true, op_ico_number is for OP field, otherwise for ICO field
+     */
     public User(Connection conn, int id, String firstName, String lastName, String username,
                 String street, String city, String state, String zip, String op_ico_number, boolean op) {
         this.connection = conn;
@@ -39,6 +53,10 @@ public class User {
             this.ICO = op_ico_number;
     }
 
+    /**
+     * Constructor for new user
+     * @param conn  connection to database
+     */
     public User(Connection conn) {
         this.connection = conn;
         frame = new JFrame("Create new user");
@@ -46,6 +64,13 @@ public class User {
         createUser();
     }
 
+    /**
+     * createUser generates new frame with fields for first and last name, username, password, address separated
+     * into street, city, state and zip, OP or ICO number and option to select whether the account is personal
+     * (OP) or company (ICO), and option to register as Bidder or Organizer. Then, the information is evaluated -
+     * check whether all fields have been filled in, password and confirm password fields match, username is not
+     * in use by other user and if everything is in order, a new user is created in database and logged in.
+     */
     public void createUser() {
         canvas.setLayout(null);
         canvas.setPreferredSize(new Dimension(440, 720));
@@ -94,6 +119,12 @@ public class User {
         passwordAgainField.setBounds(120, 280, 250, 30);
         canvas.add(passwordAgainField);
 
+        /*
+         * There are multiple address fields so every one of them has written in what's supposed to go there,
+         * for example, field for street has written in Street in gray color, which is erased when user selects
+         * the field. If he leaves it empty and selects another field, the Street in gray color appears in the
+         * field again.
+         */
         JLabel addressLabel = new JLabel("Address:");
         addressLabel.setBounds(20, 330, 100, 30);
         canvas.add(addressLabel);
@@ -190,6 +221,10 @@ public class User {
         });
         canvas.add(zipField);
 
+        /*
+         * Toggle buttons to select whether new account is personal or company, and if it's registered as Bidder
+         * or Organizer.
+         */
         JLabel opLabel = new JLabel("OP or ICO:");
         opLabel.setBounds(20, 460, 100, 30);
         canvas.add(opLabel);
@@ -220,6 +255,11 @@ public class User {
         });
         canvas.add(userToggle);
 
+        /*
+         * After pressing button, all fields are checked if some of them are empty, if they are, a warning is
+         * produced. Warning is also produced if password and check password don't match, or if the username is
+         * already in use by other user.
+         */
         JButton registerButton = new JButton("Sign up");
         registerButton.setBounds(170, 610, 100, 50);
         // Create new row in database
@@ -233,6 +273,7 @@ public class User {
             String state = stateField.getText();
             String zip = zipField.getText();
 
+            // Check empty fields
             if (firstName.isEmpty() || lastName.isEmpty() || username.isEmpty() || password.isEmpty() ||
                     passwordAgainField.getText().isEmpty() || street.isEmpty() || city.isEmpty() || state.isEmpty() ||
                     zip.isEmpty()) {
@@ -241,6 +282,7 @@ public class User {
                 return;
             }
 
+            // Check username
             try {
                 Statement stm = connection.createStatement();
                 ResultSet rs = stm.executeQuery("SELECT * FROM users WHERE username = '" + username + "';");
@@ -261,6 +303,7 @@ public class User {
 
             boolean bidder = userToggle.isSelected();
 
+            // Check passwords
             if (!password.equals(passwordAgainField.getText())) {
                 JOptionPane.showMessageDialog(canvas, "Passwords don't match!",
                         "Warning", JOptionPane.WARNING_MESSAGE);
@@ -271,6 +314,7 @@ public class User {
                 try {
                     save(street, city, state, zip, bidder);
 
+                    // Log in new user
                     if (userToggle.isSelected()) {
                         Dashboard d = new Dashboard(connection, new Bidder(connection, id, firstName, lastName,
                                 username, street, city, state, zip, opField.getText(), opToggle.isSelected()));
@@ -297,6 +341,11 @@ public class User {
         frame.setVisible(true);
     }
 
+    /**
+     * Set new personal information
+     * @param firstName new first name
+     * @param lastName  new last name
+     */
     public void setPersonal(String firstName, String lastName) {
         this.firstName = firstName;
         this.lastName = lastName;
@@ -311,12 +360,32 @@ public class User {
         }
     }
 
-    public void setUsername(String username) {
-        this.username = username;
+    /**
+     * Save new username to database
+     * @param new_username  new username
+     */
+    public void setUsername(String new_username) {
+        this.username = new_username;
 
         try {
             Statement stm = connection.createStatement();
             stm.executeQuery("UPDATE users SET username = " + this.username + " WHERE id = " + this.id + ";");
+
+        } catch (SQLException e) {
+            System.out.println(e.getMessage());
+        }
+    }
+
+    /**
+     * Save new password to database
+     * @param new_password  new password
+     */
+    public void setPassword(String new_password) {
+        this.password = new_password;
+
+        try {
+            Statement stm = connection.createStatement();
+            stm.executeQuery("UPDATE users SET password = " + this.password + " WHERE id = " + this.id + ";");
 
         } catch (SQLException e) {
             System.out.println(e.getMessage());
@@ -331,27 +400,25 @@ public class User {
         return firstName;
     }
 
-    public void setPassword(String password) {
-        this.password = password;
-
-        try {
-            Statement stm = connection.createStatement();
-            stm.executeQuery("UPDATE users SET password = " + this.password + " WHERE id = " + this.id + ";");
-
-        } catch (SQLException e) {
-            System.out.println(e.getMessage());
-        }
-    }
-
     public int getId() {
         return id;
     }
 
+    /**
+     * Save new user to database. Function differentiates whether the account is personal (OP is filled in and
+     * ICO is null) or company (ICO is filled in and OP is null) and saves the user with respective field. Function
+     * also needs the adress line separated into street, city, state and zip as it is defined in database.
+     * @param street    street from address line
+     * @param city      city from address line
+     * @param state     state from address line
+     * @param zip       zip from address line
+     * @param bidder    if true, user is bidder, if false, user is organizer
+     * @throws SQLException database error
+     */
     private void save(String street, String city, String state, String zip, boolean bidder) throws SQLException {
         Statement stm = connection.createStatement();
         String query= "INSERT INTO users ";
-        Datetime createdAt = new Datetime(new java.util.Date());
-        Datetime updatedAt = new Datetime(new Date());
+        Datetime currentDate = new Datetime(new java.util.Date());
 
         if (OP == null) {
             query += "(username, password, first_name, last_name, street, city, state, " +
@@ -366,9 +433,9 @@ public class User {
         }
 
         if (bidder) {
-            query += "1, 0, 0, '" + createdAt.getDateString() + "', '" + updatedAt.getDateString() + "');";
+            query += "1, 0, 0, '" + currentDate.getDateString() + "', '" + currentDate.getDateString() + "');";
         } else {
-            query += "0, 1, 0, '" + createdAt.getDateString() + "', '" + updatedAt.getDateString() + "');";
+            query += "0, 1, 0, '" + currentDate.getDateString() + "', '" + currentDate.getDateString() + "');";
         }
 
         stm.executeUpdate(query);

@@ -159,12 +159,12 @@ public class Dashboard {
             }
         }
 
-        // List auctions
+        // Get list of Auctions from database
         ArrayList<Auction> auctions = new ArrayList<>();
 
         try {
             Statement stm = connection.createStatement();
-            ResultSet rs = stm.executeQuery("SELECT * FROM auctions ORDER BY name LIMIT 5;");
+            ResultSet rs = stm.executeQuery("SELECT * FROM auctions ORDER BY name LIMIT 7;");
             while (rs.next()) {
                 auctions.add(new Auction(loggedIn, connection, rs.getInt("id"),
                         rs.getInt("organizer_id"), rs.getInt("charity_id"), rs.getString("name"),
@@ -175,6 +175,7 @@ public class Dashboard {
             throwables.printStackTrace();
         }
 
+        // Display Auctions
         int i = 70;
         for (Auction a : auctions) {
             JLabel auctionLabel = new JLabel(prepareHTML("black", "5", a.getName()));
@@ -241,6 +242,7 @@ public class Dashboard {
     private void createComponents() {
         components.clear();
 
+        // Organizer can create new Auctions
         if (loggedIn.getClass() == Organizer.class) {
             JLabel createAuctionLabel = new JLabel(prepareHTML("white", "4", "Create new auction"), SwingConstants.CENTER);
             createAuctionLabel.setBounds(10, 5, 150, 50);
@@ -254,6 +256,7 @@ public class Dashboard {
             });
             components.add(createAuctionLabel);
         }
+        // Bidder can issue a report
         else if (loggedIn.getClass() == Bidder.class) {
             JLabel reportAuctionLabel = new JLabel(prepareHTML("white", "4", "Report auction"), SwingConstants.CENTER);
             reportAuctionLabel.setBounds(10, 5, 150, 50);

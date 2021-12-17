@@ -58,9 +58,8 @@ public class Datetime {
      * @throws ParseException parsing error
      */
     public Datetime(String datetime) throws ParseException {
-        Date date = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").parse(datetime);
         Calendar cal = Calendar.getInstance();
-        cal.setTime(date);
+        cal.setTime(new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").parse(datetime));
         this.year = cal.get(Calendar.YEAR);
         this.month = cal.get(Calendar.MONTH);
         this.day = cal.get(Calendar.DAY_OF_MONTH);
@@ -70,7 +69,7 @@ public class Datetime {
     }
 
     /**
-     * Constructor from java Date object
+     * Constructor from java.util.Date object
      * @param datetime date object
      */
     public Datetime(Date datetime) {
@@ -84,6 +83,10 @@ public class Datetime {
         this.second = cal.get(Calendar.SECOND);
     }
 
+    /**
+     * Assemble string from Datetime in format that is the same as the one used in database
+     * @return  string in format "yyyy-mm-dd HH:MM:SS"
+     */
     public String getDateString() {
         String datetime = "" + year;
         if (month < 10) {
@@ -119,6 +122,11 @@ public class Datetime {
         return datetime;
     }
 
+    /**
+     * Return true if this Datetime is before the datetime in argument
+     * @param d compared Datetime
+     * @return  boolean whether this Datetime is lower
+     */
     public boolean isLower(Datetime d) {
         if (this.year < d.year) {
             return true;

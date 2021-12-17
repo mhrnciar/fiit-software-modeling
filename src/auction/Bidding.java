@@ -29,10 +29,24 @@ public class Bidding {
     Datetime biddingStart;
     Datetime biddingEnd;
 
-    public Bidding(Connection conn, User loggedIn, int id, int auctionId, String name, String description,
+    /**
+     * Constructor for existing Bidding
+     * @param conn              connection to database
+     * @param user              logged in User
+     * @param id                Bidding's id in database
+     * @param auctionId         id of Auction the Bidding is in
+     * @param name              name of prize
+     * @param description       description of prize
+     * @param startingBid       starting bid
+     * @param highestBid        highest bid
+     * @param highestBidderId   id of the User who offered the highest bid
+     * @param biddingStart      start of Bidding
+     * @param biddingEnd        end of Bidding
+     */
+    public Bidding(Connection conn, User user, int id, int auctionId, String name, String description,
                    float startingBid, float highestBid, int highestBidderId, Datetime biddingStart, Datetime biddingEnd) {
         this.connection = conn;
-        this.loggedIn = loggedIn;
+        this.loggedIn = user;
 
         this.id = id;
         this.auctionId = auctionId;
@@ -45,14 +59,23 @@ public class Bidding {
         this.biddingEnd = biddingEnd;
     }
 
-    public Bidding(Connection conn, int auctionId, User loggedIn) {
+    /**
+     * Constructor for new Bidding
+     * @param conn          connection to database
+     * @param auctionId     id of Auction the Bidding will be in
+     * @param user          logged in User
+     */
+    public Bidding(Connection conn, int auctionId, User user) {
         this.connection = conn;
         this.auctionId = auctionId;
-        this.loggedIn = loggedIn;
+        this.loggedIn = user;
 
         generateBiddingCreation();
     }
 
+    /**
+     * Create new frame with information about Bidding
+     */
     public void generateBiddingInfo() {
         frame = new JFrame("Bidding information");
         canvas = new BiddingCanvas();
@@ -64,6 +87,7 @@ public class Bidding {
         title.setBounds(5, 5, 430, 50);
         canvas.add(title);
 
+        // If logged in User is Bidder, create a button to make a new bid on the top left
         if (loggedIn.getClass() == Bidder.class) {
             JLabel makeBidLabel = new JLabel(prepareHTML("white", "4", "Make new bid"));
             makeBidLabel.setBounds(10, 5, 100, 50);
@@ -73,6 +97,7 @@ public class Bidding {
                     JDialog bidDialog = new JDialog();
                     bidDialog.setLayout(null);
 
+                    // Display starting or current highest bid
                     JLabel prevLabel;
                     if (highestBid == 0) {
                         prevLabel = new JLabel("Starting bid: " + startingBid + "€");
@@ -84,6 +109,7 @@ public class Bidding {
                         bidDialog.add(prevLabel);
                     }
 
+                    // Field to insert new bid
                     JLabel newLabel = new JLabel("New bid:");
                     newLabel.setBounds(20, 45, 100, 30);
                     bidDialog.add(newLabel);
@@ -95,7 +121,7 @@ public class Bidding {
                     JButton confirmButton = new JButton("Confirm");
                     confirmButton.setBounds(70, 130, 100, 50);
 
-                    // Check if user exists and passwords match
+                    // Check if new bid is higher than previous one
                     confirmButton.addActionListener (e1 -> {
                         float newBid = (Float) newBidSpinner.getValue();
                         if (newBid <= highestBid) {
@@ -106,10 +132,13 @@ public class Bidding {
 
                         highestBid = newBid;
 
+                        // Save new bid to database
                         try {
                             Statement stm = connection.createStatement();
+                            Datetime updatedAt = new Datetime(new Date());
                             stm.executeUpdate("UPDATE biddings SET highest_bid = " + highestBid + ", " +
-                                    "highest_bidder_id = " + loggedIn.getId() + " WHERE id = " + id + ";");
+                                    "highest_bidder_id = " + loggedIn.getId() + ", updated_at = " +
+                                    updatedAt.getDateString() + " WHERE id = " + id + ";");
 
                             frame.remove(canvas);
                             frame.setVisible(false);
@@ -133,6 +162,7 @@ public class Bidding {
         charityLabel.setBounds(20, 80, 100, 30);
         canvas.add(charityLabel);
 
+        // Get Charity information from database
         try {
             Statement stm = connection.createStatement();
             ResultSet rs = stm.executeQuery("SELECT * FROM auctions WHERE id = " + auctionId + ";");
@@ -163,6 +193,7 @@ public class Bidding {
         startingBidText.setBounds(120, 250, 200, 30);
         canvas.add(startingBidText);
 
+        // Get username of the highest bidder from database
         int i = 300;
         if (highestBid != 0) {
             String bidderName = "";
@@ -197,6 +228,7 @@ public class Bidding {
             i += 50;
         }
 
+        // Start and end dates of Bidding
         JLabel startLabel = new JLabel("Bidding start:");
         startLabel.setBounds(20, i, 100, 30);
         canvas.add(startLabel);
@@ -222,7 +254,10 @@ public class Bidding {
     }
 
     /**
-     * Generate screen for creating new auction
+     * Generate screen for creating new Bidding. Organizer can set name, description, starting bid and starting
+     * and ending datetime of Bidding. Before saving, all fields are evaluated if they are filled in and in correct
+     * format (start of Bidding isn't set to after its end, ...). At the end are two buttons, one to save and
+     * create another Bidding, other to save and finish creating Biddings
      */
     public void generateBiddingCreation() {
         frame = new JFrame("Create new auction");
@@ -291,12 +326,14 @@ public class Bidding {
             this.biddingStart = new Datetime((Date) startDateSpinner.getValue());
             this.biddingEnd = new Datetime((Date) endDateSpinner.getValue());
 
+            // Check if some fields are empty
             if (name.isEmpty() || description.isEmpty() || startingBid == 0) {
                 JOptionPane.showMessageDialog(canvas, "All fields must be filled in and in right format!",
                         "Warning", JOptionPane.WARNING_MESSAGE);
                 return;
             }
 
+            // Check if start of Bidding is before its end
             if (!biddingStart.isLower(biddingEnd)) {
                 JOptionPane.showMessageDialog(canvas, "Start date must be before end date!",
                         "Warning", JOptionPane.WARNING_MESSAGE);
@@ -305,6 +342,7 @@ public class Bidding {
 
             save();
 
+            // Open frame for new Bidding
             Bidding b = new Bidding(connection, auctionId, loggedIn);
 
             frame.remove(canvas);
@@ -312,6 +350,7 @@ public class Bidding {
         });
         canvas.add(createButton);
 
+        // Same operations as before
         JButton finishButton = new JButton("Save and finish");
         finishButton.setBounds(230, 390, 200, 50);
         finishButton.addActionListener (e -> {
@@ -335,6 +374,7 @@ public class Bidding {
 
             save();
 
+            // Open Dashboard
             Dashboard d = new Dashboard(connection, loggedIn);
 
             frame.remove(canvas);
@@ -383,12 +423,11 @@ public class Bidding {
     }
 
     /**
-     * Save new bidding to database
+     * Save new Bidding to database
      */
     public void save() {
         try {
-            Datetime createdAt = new Datetime(new Date());
-            Datetime updatedAt = new Datetime(new Date());
+            Datetime currentDate = new Datetime(new Date());
 
             Statement stm = connection.createStatement();
 
@@ -396,7 +435,7 @@ public class Bidding {
                     "starting_bid, bidding_start, bidding_end, created_at, updated_at) " +
                     "VALUES (" + auctionId + ", '" + name + "', '" + description + "', " + startingBid + ", '" +
                     biddingStart.getDateString() + "', '" + biddingEnd.getDateString() + "', '" +
-                    createdAt.getDateString() + "', '" + updatedAt.getDateString() + "');");
+                    currentDate.getDateString() + "', '" + currentDate.getDateString() + "');");
 
         } catch (SQLException e) {
             System.out.println(e.getMessage());
@@ -429,7 +468,7 @@ public class Bidding {
     }
 
     /**
-     * Create red bar at the top of window
+     * Create green bar at the top of window
      */
     private static class BiddingCreationCanvas extends BiddingCanvas {
         protected void paintComponent(Graphics g) {
